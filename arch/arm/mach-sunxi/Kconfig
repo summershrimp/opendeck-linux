@@ -53,3 +53,15 @@ config MACH_SUN9I
 	select ARM_GIC
 
 endif
+
+menuconfig ARCH_SUNXI_V5
+	bool "Allwinner ARMv5 SoCs"
+	depends on ARCH_MULTI_V5
+	select ARCH_SUNXI
+
+if ARCH_SUNXI_V5
+
+config MACH_SUNIV
+	bool "Allwinner suniv Family SoCs support"
+	default ARCH_SUNXI
+endif
