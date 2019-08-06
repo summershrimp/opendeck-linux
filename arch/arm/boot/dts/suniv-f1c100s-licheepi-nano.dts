@@ -28,6 +28,37 @@
 		regulator-min-microvolt = <3300000>;
 		regulator-max-microvolt = <3300000>;
 	};
+
+	leds {
+		compatible = "gpio-leds";
+
+		blue_led {
+			label = "licheepi:blue:usr";
+			gpios = <&pio 4 4 GPIO_ACTIVE_LOW>; /* PE4 */
+		};
+
+		green_led {
+			label = "licheepi:green:usr";
+			gpios = <&pio 4 5 GPIO_ACTIVE_LOW>; /* PE5 */
+			default-state = "on";
+		};
+
+		red_led {
+			label = "licheepi:red:usr";
+			gpios = <&pio 4 6 GPIO_ACTIVE_LOW>; /* PE6 */
+		};
+	};
+
+};
+
+&soc {
+        pwm: pwm@1c21000 {
+                compatible = "allwinner,sun7i-a20-pwm";
+                reg = <0x01c21000 0xC>;
+                clocks = <&osc24M>;
+                #pwm-cells = <3>;
+                status = "disabled";
+        };
 };
 
 &mmc0 {
@@ -45,14 +76,42 @@
 	pinctrl-names = "default";
 	pinctrl-0 = <&spi0_pins_a>;
 	status = "okay";
-
-	flash@0 {
+	flash: w25q128@0 {
 		#address-cells = <1>;
 		#size-cells = <1>;
 		compatible = "winbond,w25q128", "jedec,spi-nor";
 		reg = <0>;
-		spi-max-frequency = <40000000>;
+		spi-max-frequency = <50000000>;
+		partitions {
+			compatible = "fixed-partitions";
+			#address-cells = <1>;
+			#size-cells = <1>;
+
+			partition@0 {
+				label = "u-boot";
+				reg = <0x000000 0x40000>;
+				read-only;
+			};
+
+			partition@40000 {
+				label = "dtb";
+				reg = <0x40000 0x10000>;
+				read-only;
+			};
+
+			partition@50000 {
+				label = "kernel";
+				reg = <0x50000 0x3b0000>;
+				read-only;
+			};
+
+			partition@400000 {
+				label = "rootfs";
+				reg = <0x400000 0xc00000>;
+			};
+		};
 	};
+
 };
 
 &uart0 {
