@@ -48,6 +48,7 @@ struct f_hidg {
 	unsigned short			report_desc_length;
 	char				*report_desc;
 	unsigned short			report_length;
+	unsigned short			packet_length;
 
 	/* recv report */
 	struct list_head		completed_out_req;
@@ -107,7 +108,7 @@ static struct usb_endpoint_descriptor hidg_ss_in_ep_desc = {
 	.bEndpointAddress	= USB_DIR_IN,
 	.bmAttributes		= USB_ENDPOINT_XFER_INT,
 	/*.wMaxPacketSize	= DYNAMIC */
-	.bInterval		= 4, /* FIXME: Add this field in the
+	.bInterval		= 1, /* FIXME: Add this field in the
 				      * HID gadget configuration?
 				      * (struct hidg_func_descriptor)
 				      */
@@ -128,7 +129,7 @@ static struct usb_endpoint_descriptor hidg_ss_out_ep_desc = {
 	.bEndpointAddress	= USB_DIR_OUT,
 	.bmAttributes		= USB_ENDPOINT_XFER_INT,
 	/*.wMaxPacketSize	= DYNAMIC */
-	.bInterval		= 4, /* FIXME: Add this field in the
+	.bInterval		= 1, /* FIXME: Add this field in the
 				      * HID gadget configuration?
 				      * (struct hidg_func_descriptor)
 				      */
@@ -161,7 +162,7 @@ static struct usb_endpoint_descriptor hidg_hs_in_ep_desc = {
 	.bEndpointAddress	= USB_DIR_IN,
 	.bmAttributes		= USB_ENDPOINT_XFER_INT,
 	/*.wMaxPacketSize	= DYNAMIC */
-	.bInterval		= 4, /* FIXME: Add this field in the
+	.bInterval		= 1, /* FIXME: Add this field in the
 				      * HID gadget configuration?
 				      * (struct hidg_func_descriptor)
 				      */
@@ -173,7 +174,7 @@ static struct usb_endpoint_descriptor hidg_hs_out_ep_desc = {
 	.bEndpointAddress	= USB_DIR_OUT,
 	.bmAttributes		= USB_ENDPOINT_XFER_INT,
 	/*.wMaxPacketSize	= DYNAMIC */
-	.bInterval		= 4, /* FIXME: Add this field in the
+	.bInterval		= 1, /* FIXME: Add this field in the
 				      * HID gadget configuration?
 				      * (struct hidg_func_descriptor)
 				      */
@@ -195,7 +196,7 @@ static struct usb_endpoint_descriptor hidg_fs_in_ep_desc = {
 	.bEndpointAddress	= USB_DIR_IN,
 	.bmAttributes		= USB_ENDPOINT_XFER_INT,
 	/*.wMaxPacketSize	= DYNAMIC */
-	.bInterval		= 10, /* FIXME: Add this field in the
+	.bInterval		= 1, /* FIXME: Add this field in the
 				       * HID gadget configuration?
 				       * (struct hidg_func_descriptor)
 				       */
@@ -207,7 +208,7 @@ static struct usb_endpoint_descriptor hidg_fs_out_ep_desc = {
 	.bEndpointAddress	= USB_DIR_OUT,
 	.bmAttributes		= USB_ENDPOINT_XFER_INT,
 	/*.wMaxPacketSize	= DYNAMIC */
-	.bInterval		= 10, /* FIXME: Add this field in the
+	.bInterval		= 1, /* FIXME: Add this field in the
 				       * HID gadget configuration?
 				       * (struct hidg_func_descriptor)
 				       */
@@ -468,7 +469,6 @@ static void hidg_set_report_complete(struct usb_ep *ep, struct usb_request *req)
 	struct usb_composite_dev *cdev = hidg->func.config->cdev;
 	struct f_hidg_req_list *req_list;
 	unsigned long flags;
-
 	switch (req->status) {
 	case 0:
 		req_list = kzalloc(sizeof(*req_list), GFP_ATOMIC);
@@ -687,7 +687,6 @@ static int hidg_set_alt(struct usb_function *f, unsigned intf, unsigned alt)
 			goto free_req_in;
 		}
 		hidg->out_ep->driver_data = hidg;
-
 		/*
 		 * allocate a bunch of read buffers and queue them all at once.
 		 */
@@ -783,16 +782,16 @@ static int hidg_bind(struct usb_configuration *c, struct usb_function *f)
 	hidg_interface_desc.bInterfaceSubClass = hidg->bInterfaceSubClass;
 	hidg_interface_desc.bInterfaceProtocol = hidg->bInterfaceProtocol;
 	hidg->protocol = HID_REPORT_PROTOCOL;
-	hidg_ss_in_ep_desc.wMaxPacketSize = cpu_to_le16(hidg->report_length);
+	hidg_ss_in_ep_desc.wMaxPacketSize = cpu_to_le16(hidg->packet_length);
 	hidg_ss_in_comp_desc.wBytesPerInterval =
-				cpu_to_le16(hidg->report_length);
-	hidg_hs_in_ep_desc.wMaxPacketSize = cpu_to_le16(hidg->report_length);
-	hidg_fs_in_ep_desc.wMaxPacketSize = cpu_to_le16(hidg->report_length);
-	hidg_ss_out_ep_desc.wMaxPacketSize = cpu_to_le16(hidg->report_length);
+				cpu_to_le16(hidg->packet_length);
+	hidg_hs_in_ep_desc.wMaxPacketSize = cpu_to_le16(hidg->packet_length);
+	hidg_fs_in_ep_desc.wMaxPacketSize = cpu_to_le16(hidg->packet_length);
+	hidg_ss_out_ep_desc.wMaxPacketSize = cpu_to_le16(hidg->packet_length);
 	hidg_ss_out_comp_desc.wBytesPerInterval =
-				cpu_to_le16(hidg->report_length);
-	hidg_hs_out_ep_desc.wMaxPacketSize = cpu_to_le16(hidg->report_length);
-	hidg_fs_out_ep_desc.wMaxPacketSize = cpu_to_le16(hidg->report_length);
+				cpu_to_le16(hidg->packet_length);
+	hidg_hs_out_ep_desc.wMaxPacketSize = cpu_to_le16(hidg->packet_length);
+	hidg_fs_out_ep_desc.wMaxPacketSize = cpu_to_le16(hidg->packet_length);
 	/*
 	 * We can use hidg_desc struct here but we should not relay
 	 * that its content won't change after returning from this function.
@@ -928,6 +927,7 @@ CONFIGFS_ATTR(f_hid_opts_, name)
 F_HID_OPT(subclass, 8, 255);
 F_HID_OPT(protocol, 8, 255);
 F_HID_OPT(report_length, 16, 65535);
+F_HID_OPT(packet_length, 16, 65535);
 
 static ssize_t f_hid_opts_report_desc_show(struct config_item *item, char *page)
 {
@@ -988,6 +988,7 @@ static struct configfs_attribute *hid_attrs[] = {
 	&f_hid_opts_attr_protocol,
 	&f_hid_opts_attr_report_length,
 	&f_hid_opts_attr_report_desc,
+	&f_hid_opts_attr_packet_length,
 	&f_hid_opts_attr_dev,
 	NULL,
 };
@@ -1106,6 +1107,8 @@ static struct usb_function *hidg_alloc(struct usb_function_instance *fi)
 	hidg->bInterfaceProtocol = opts->protocol;
 	hidg->report_length = opts->report_length;
 	hidg->report_desc_length = opts->report_desc_length;
+	hidg->packet_length = opts->packet_length;
+
 	if (opts->report_desc) {
 		hidg->report_desc = kmemdup(opts->report_desc,
 					    opts->report_desc_length,

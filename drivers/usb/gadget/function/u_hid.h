@@ -25,6 +25,7 @@ struct f_hid_opts {
 	unsigned char			protocol;
 	unsigned short			report_length;
 	unsigned short			report_desc_length;
+	unsigned short			packet_length;
 	unsigned char			*report_desc;
 	bool				report_desc_alloc;
 
